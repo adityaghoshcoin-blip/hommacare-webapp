@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <meta name="theme-color" content="#00C16A">
+  <title>Hommacare | Professional Home Healthcare Services</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: '#00C16A', 'primary-light': '#00E38C', dark: '#0F172A' },
+          fontFamily: { poppins: ['Poppins', 'sans-serif'], inter: ['Inter', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #F7F8FA; overflow-x: hidden; padding-bottom: 70px; }
+    .glass { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .btn-primary { background: linear-gradient(135deg, #00C16A 0%, #00E38C 100%); box-shadow: 0 4px 15px rgba(0, 193, 106, 0.3); transition: all 0.3s ease; }
+    .btn-primary:active { transform: scale(0.97); }
+    .service-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .service-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,193,106,0.12); }
+    .bottom-nav { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); }
+    .nav-item.active { background: linear-gradient(135deg, #00C16A 0%, #00E38C 100%); color: white; box-shadow: 0 4px 15px rgba(0,193,106,0.3); }
+    .modal-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
+    .crm-card { background: white; border-radius: 20px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .crm-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); }
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+    .status-new { background: #DBEAFE; color: #1E40AF; }
+    .status-contacted { background: #D1FAE5; color: #065F46; }
+    .status-interested { background: #FEF3C7; color: #92400E; }
+    .status-booked { background: #D1FAE5; color: #065F46; }
+    .pipeline-column { min-width: 260px; max-width: 280px; background: #F3F4F6; border-radius: 20px; padding: 12px; }
+    .pipeline-card { background: white; border-radius: 16px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #00C16A; border-radius: 10px; }
+    @media (max-width: 480px) { .search-label-mobile { font-size: 9px; } .search-select-mobile { font-size: 10px; padding: 6px 4px; } }
+    .image-preview { width: 70px; height: 70px; object-fit: cover; border-radius: 12px; border: 2px solid #00C16A; }
+    .admin-sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 1000; width: 280px; background: white; box-shadow: 2px 0 20px rgba(0,0,0,0.15); transition: left 0.3s ease-in-out; overflow-y: auto; }
+    .admin-sidebar.open { left: 0; }
+    .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; backdrop-filter: blur(2px); }
+    .sidebar-overlay.active { display: block; }
+    @media (min-width: 768px) { .admin-sidebar, .sidebar-overlay { display: none; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in-up { animation: fadeInUp 0.4s ease forwards; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ===================== MAIN WEBSITE VIEW ===================== -->
+  <div id="websiteView">
+    <div class="fixed top-0 left-0 right-0 z-50 glass px-3 py-2 shadow-sm">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <div class="w-7 h-7 bg-gradient-to-r from-primary to-primary-light rounded-lg flex items-center justify-center"><i class="fas fa-hand-holding-heart text-white text-[10px]"></i></div>
+          <h1 class="text-base font-poppins font-bold text-dark">Hommacare</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="searchTrigger" class="w-7 h-7 bg-gray-100 rounded-full"><i class="fas fa-search text-gray-600 text-xs"></i></button>
+          <a href="tel:+919910988805" class="w-7 h-7 bg-primary/10 rounded-full"><i class="fas fa-phone-alt text-primary text-xs"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div id="searchBar" class="fixed top-12 left-3 right-3 z-50 transition-all duration-300" style="opacity:0;transform:translateY(-20px);pointer-events:none">
+      <div class="bg-white rounded-xl shadow-lg p-2 flex gap-2"><i class="fas fa-search text-primary ml-2 text-xs"></i><input type="text" id="searchInput" placeholder="Search services..." class="flex-1 py-2 outline-none text-sm"><button class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs">Search</button></div>
+    </div>
+
+    <section class="px-3 pt-12 pb-1">
+      <div class="relative rounded-xl overflow-hidden h-36 bg-gradient-to-r from-primary to-primary-light">
+        <img src="https://images.pexels.com/photos/5215024/medical-professionals-working-together-in-hospital-corridor/5215024.jpg?auto=compress&cs=tinysrgb&w=800" class="absolute inset-0 w-full h-full object-cover opacity-40">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute inset-0 flex flex-col justify-end p-3 text-white">
+          <h1 class="text-sm font-poppins font-bold">Professional Home Healthcare</h1>
+          <p class="text-[10px] opacity-90">Quality care at your doorstep</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Services Grid -->
+    <section class="px-3 mb-4">
+      <h2 class="text-sm font-poppins font-bold text-dark mb-2"><i class="fas fa-heartbeat text-primary text-xs mr-1"></i>Our Healthcare Services</h2>
+      <div class="grid grid-cols-2 gap-3" id="servicesGrid"></div>
+    </section>
+
+    <section class="px-3 mb-4">
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-white rounded-xl p-1.5 text-center shadow-sm"><p class="text-base font-bold text-primary" id="statServices">0</p><p class="text-[9px] text-gray-500">Services</p></div>
+        <div class="bg-white rounded-xl p-1.5 text-center shadow-sm"><p class="text-base font-bold text-primary" id="statBookings">0</p><p class="text-[9px] text-gray-500">Bookings</p></div>
+        <div class="bg-white rounded-xl p-1.5 text-center shadow-sm"><p class="text-base font-bold text-primary" id="statLeads">0</p><p class="text-[9px] text-gray-500">Patients</p></div>
+      </div>
+    </section>
+
+    <section class="px-3 mb-8">
+      <h2 class="text-sm font-poppins font-bold text-dark mb-2"><i class="fas fa-star text-primary text-xs mr-1"></i>Why Choose Hommacare?</h2>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-white rounded-xl p-2 text-center shadow-sm"><i class="fas fa-user-md text-primary text-sm mb-1 block"></i><p class="text-[9px] font-semibold">Licensed Professionals</p></div>
+        <div class="bg-white rounded-xl p-2 text-center shadow-sm"><i class="fas fa-clock text-primary text-sm mb-1 block"></i><p class="text-[9px] font-semibold">24/7 Availability</p></div>
+        <div class="bg-white rounded-xl p-2 text-center shadow-sm"><i class="fas fa-map-marker-alt text-primary text-sm mb-1 block"></i><p class="text-[9px] font-semibold">Service at Home</p></div>
+        <div class="bg-white rounded-xl p-2 text-center shadow-sm"><i class="fas fa-rupee-sign text-primary text-sm mb-1 block"></i><p class="text-[9px] font-semibold">Affordable Plans</p></div>
+      </div>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 right-0 bottom-nav px-2 py-1 z-50">
+      <div class="flex justify-around items-center">
+        <div class="nav-item active flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-page="home"><i class="fas fa-home text-sm"></i><span class="text-[9px]">Home</span></div>
+        <div class="nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-page="services"><i class="fas fa-heartbeat text-sm"></i><span class="text-[9px]">Services</span></div>
+        <div class="nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-page="bookings"><i class="fas fa-calendar-check text-sm"></i><span class="text-[9px]">Bookings</span></div>
+        <div class="nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-page="contact"><i class="fas fa-phone-alt text-sm"></i><span class="text-[9px]">Contact</span></div>
+        <div class="nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-page="crm"><i class="fas fa-chart-line text-sm"></i><span class="text-[9px]">Admin</span></div>
+      </div>
+    </div>
+
+    <div class="fixed bottom-16 right-2 z-50 cursor-pointer w-9 h-9 rounded-full btn-primary flex items-center justify-center shadow-md" id="whatsappBtn"><i class="fab fa-whatsapp text-white text-base"></i></div>
+  </div>
+
+  <!-- ===================== ADMIN LOGIN MODAL ===================== -->
+  <div id="adminLoginModal" class="fixed inset-0 z-[200] modal-overlay opacity-0 invisible transition flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5">
+      <div class="text-center mb-3"><div class="w-12 h-12 btn-primary rounded-xl flex items-center justify-center mx-auto mb-2"><i class="fas fa-lock text-white text-sm"></i></div><h2 class="text-lg font-poppins font-bold">Admin Login</h2><p class="text-xs text-gray-500">Enter credentials to access CRM</p></div>
+      <form id="adminLoginForm"><input type="email" id="adminEmail" placeholder="admin@hommacare.com" class="w-full p-2 border rounded-lg mb-2 text-sm" value="admin@hommacare.com"><input type="password" id="adminPassword" placeholder="Password" class="w-full p-2 border rounded-lg mb-3 text-sm" value="admin123"><button type="submit" class="w-full btn-primary text-white py-2 rounded-lg font-semibold text-sm">Login to Dashboard</button><p class="text-center text-[10px] text-gray-400 mt-3">Demo: admin@hommacare.com / admin123</p></form>
+      <button id="closeAdminLoginBtn" class="absolute top-3 right-3 text-gray-400"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <!-- ===================== SIDEBAR OVERLAY ===================== -->
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+  <!-- ===================== RESPONSIVE ADMIN PANEL ===================== -->
+  <div id="crmView" style="display: none;" class="min-h-screen bg-gray-50">
+    <div class="fixed top-0 left-0 right-0 z-50 glass px-3 py-2 shadow-sm">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <button id="mobileMenuToggle" class="md:hidden w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-bars text-gray-600 text-sm"></i></button>
+          <button id="backToSiteFromCRM" class="w-8 h-8 bg-gray-100 rounded-full hidden md:flex"><i class="fas fa-arrow-left text-gray-600 text-xs"></i></button>
+          <div><h1 class="text-base font-poppins font-bold text-dark">Hommacare Admin</h1><p class="text-[9px] text-gray-500">Healthcare Dashboard</p></div>
+        </div>
+        <div class="flex gap-2"><button id="crmLogoutBtn" class="w-8 h-8 bg-red-100 rounded-full"><i class="fas fa-sign-out-alt text-red-500 text-xs"></i></button></div>
+      </div>
+    </div>
+
+    <div id="mobileSidebar" class="admin-sidebar">
+      <div class="p-4">
+        <div class="flex justify-between items-center mb-6 pb-3 border-b">
+          <h2 class="font-poppins font-bold text-primary text-lg">Hommacare CRM</h2>
+          <button id="closeSidebarBtn" class="w-8 h-8 bg-gray-100 rounded-full hover:bg-gray-200 transition"><i class="fas fa-times text-gray-600 text-sm"></i></button>
+        </div>
+        <nav class="space-y-2">
+          <div class="crm-nav-item-mobile flex items-center gap-3 p-3 rounded-xl cursor-pointer bg-primary/10 text-primary transition" data-crm-page="dashboard"><i class="fas fa-chart-line w-5 text-sm"></i><span class="text-sm font-medium">Dashboard</span></div>
+          <div class="crm-nav-item-mobile flex items-center gap-3 p-3 rounded-xl cursor-pointer text-gray-600 hover:bg-gray-100 transition" data-crm-page="leads"><i class="fas fa-users w-5 text-sm"></i><span class="text-sm font-medium">Patient Leads</span></div>
+          <div class="crm-nav-item-mobile flex items-center gap-3 p-3 rounded-xl cursor-pointer text-gray-600 hover:bg-gray-100 transition" data-crm-page="services"><i class="fas fa-heartbeat w-5 text-sm"></i><span class="text-sm font-medium">Services</span></div>
+          <div class="crm-nav-item-mobile flex items-center gap-3 p-3 rounded-xl cursor-pointer text-gray-600 hover:bg-gray-100 transition" data-crm-page="pipeline"><i class="fas fa-chart-simple w-5 text-sm"></i><span class="text-sm font-medium">Care Pipeline</span></div>
+          <div class="crm-nav-item-mobile flex items-center gap-3 p-3 rounded-xl cursor-pointer text-gray-600 hover:bg-gray-100 transition" data-crm-page="visits"><i class="fas fa-calendar-alt w-5 text-sm"></i><span class="text-sm font-medium">Visit Schedule</span></div>
+        </nav>
+      </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bottom-nav px-2 py-1 z-50 md:hidden">
+      <div class="flex justify-around items-center">
+        <div class="crm-nav-item active flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-crm-page="dashboard"><i class="fas fa-chart-line text-sm"></i><span class="text-[9px]">Home</span></div>
+        <div class="crm-nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-crm-page="leads"><i class="fas fa-users text-sm"></i><span class="text-[9px]">Leads</span></div>
+        <div class="crm-nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-crm-page="services"><i class="fas fa-heartbeat text-sm"></i><span class="text-[9px]">Services</span></div>
+        <div class="crm-nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-crm-page="pipeline"><i class="fas fa-chart-simple text-sm"></i><span class="text-[9px]">Pipeline</span></div>
+        <div class="crm-nav-item flex flex-col items-center gap-0 px-2 py-1 rounded-xl cursor-pointer" data-crm-page="visits"><i class="fas fa-calendar-alt text-sm"></i><span class="text-[9px]">Visits</span></div>
+      </div>
+    </div>
+
+    <div class="pt-14 pb-16 px-3 md:pl-4 md:pr-4">
+      <div id="crmDashboardPage">
+        <div class="mb-4"><h2 class="text-xl font-poppins font-bold text-dark">Welcome, Admin</h2><p class="text-gray-500 text-xs">Healthcare performance dashboard</p></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div class="crm-card p-3"><div><p class="text-gray-500 text-[10px]">Total Patients</p><p class="text-xl font-bold text-dark" id="crmTotalLeads">0</p></div></div>
+          <div class="crm-card p-3"><div><p class="text-gray-500 text-[10px]">Home Visits</p><p class="text-xl font-bold text-dark" id="crmTotalVisits">0</p></div></div>
+          <div class="crm-card p-3"><div><p class="text-gray-500 text-[10px]">Service Bookings</p><p class="text-xl font-bold text-dark" id="crmTotalBookings">0</p></div></div>
+          <div class="crm-card p-3"><div><p class="text-gray-500 text-[10px]">Conversion</p><p class="text-xl font-bold text-primary" id="crmConversion">0%</p></div></div>
+        </div>
+        <div class="crm-card p-3 mb-4"><canvas id="leadChart" height="140"></canvas></div>
+        <div class="crm-card p-3"><h3 class="font-semibold text-sm mb-2">Recent Patient Activities</h3><div id="crmRecentActivities" class="space-y-2"></div></div>
+      </div>
+      
+      <div id="crmLeadsPage" style="display: none;">
+        <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-poppins font-bold text-dark">Patient Management</h2><button id="addLeadBtn" class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs"><i class="fas fa-plus mr-1"></i>Add Patient</button></div>
+        <div class="crm-card p-2 mb-3"><div class="grid grid-cols-2 gap-2"><select id="leadStatusFilter" class="p-1.5 border rounded-lg text-xs"><option value="all">All Status</option><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="booked">Booked</option></select><select id="leadSourceFilter" class="p-1.5 border rounded-lg text-xs"><option value="all">All Sources</option><option value="website">Website</option><option value="whatsapp">WhatsApp</option><option value="booking">Booking</option><option value="referral">Referral</option></select></div></div>
+        <div id="leadsList" class="space-y-2"></div>
+      </div>
+      
+      <div id="crmServicesPage" style="display: none;">
+        <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-poppins font-bold text-dark">Service Management</h2><button id="openAddServiceModal" class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs"><i class="fas fa-plus mr-1"></i>Add Service</button></div>
+        <div id="adminServicesList" class="space-y-2"></div>
+      </div>
+      
+      <div id="crmPipelinePage" style="display: none;">
+        <h2 class="text-lg font-poppins font-bold text-dark mb-3"><i class="fas fa-chart-simple text-primary mr-2"></i>Patient Care Pipeline</h2>
+        <div class="overflow-x-auto pb-2"><div class="flex gap-3" id="pipelineContainer"></div></div>
+      </div>
+      
+      <div id="crmVisitsPage" style="display: none;">
+        <h2 class="text-lg font-poppins font-bold text-dark mb-3"><i class="fas fa-calendar-alt text-primary mr-2"></i>Home Visit Schedule</h2>
+        <div id="visitsList" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="serviceModal" class="fixed inset-0 z-[160] modal-overlay opacity-0 invisible transition flex items-center justify-center p-3"><div class="bg-white rounded-2xl max-w-md w-full max-h-[85vh] overflow-y-auto"><div class="sticky top-0 bg-white p-3 border-b flex justify-between"><h3 id="serviceModalTitle" class="font-poppins font-bold text-sm">Add Service</h3><button id="closeServiceModal"><i class="fas fa-times text-gray-500"></i></button></div><div class="p-3 space-y-2"><input type="hidden" id="editServiceId"><input type="text" id="serviceName" placeholder="Service Name" class="w-full p-2 border rounded-lg text-sm"><input type="text" id="servicePrice" placeholder="Price (AED)" class="w-full p-2 border rounded-lg text-sm"><input type="text" id="serviceDuration" placeholder="Duration" class="w-full p-2 border rounded-lg text-sm"><div><label class="text-xs font-semibold">Service Image</label><input type="file" id="serviceImageFile" accept="image/*" class="w-full p-1 border rounded-lg text-xs mt-1"><div id="imagePreviewContainer" class="mt-2 hidden"><img id="imagePreview" class="image-preview"></div><input type="text" id="serviceImageUrl" placeholder="Or enter URL" class="w-full p-2 border rounded-lg text-xs mt-2"></div><textarea id="serviceDescription" placeholder="Description" rows="2" class="w-full p-2 border rounded-lg text-sm"></textarea><button id="saveServiceBtn" class="w-full bg-primary text-white py-2 rounded-lg font-semibold text-sm mt-2">Save</button></div></div></div>
+  <div id="leadModal" class="fixed inset-0 z-[100] modal-overlay opacity-0 invisible transition flex items-end justify-center"><div class="bg-white rounded-t-2xl w-full max-h-[80vh] overflow-y-auto"><div class="sticky top-0 bg-white p-3 border-b flex justify-between"><h3 class="font-poppins font-bold text-sm">Add Patient</h3><button id="closeLeadModal"><i class="fas fa-times text-gray-500"></i></button></div><div class="p-3 space-y-2"><input type="text" id="leadName" placeholder="Full Name" class="w-full p-2 border rounded-lg text-sm"><input type="email" id="leadEmail" placeholder="Email" class="w-full p-2 border rounded-lg text-sm"><input type="tel" id="leadPhone" placeholder="Phone" class="w-full p-2 border rounded-lg text-sm"><input type="text" id="leadAddress" placeholder="Address" class="w-full p-2 border rounded-lg text-sm"><select id="leadSource" class="w-full p-2 border rounded-lg text-sm"><option value="website">Website</option><option value="whatsapp">WhatsApp</option><option value="referral">Referral</option></select><select id="leadStatus" class="w-full p-2 border rounded-lg text-sm"><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="booked">Booked</option></select><textarea id="leadNotes" placeholder="Medical Requirements" rows="2" class="w-full p-2 border rounded-lg text-sm"></textarea><button id="saveLeadBtn" class="w-full bg-primary text-white py-2 rounded-lg font-semibold text-sm">Save</button></div></div></div>
+  <div id="scheduleModal" class="fixed inset-0 z-[70] modal-overlay opacity-0 invisible transition flex items-center justify-center p-3"><div class="bg-white rounded-xl max-w-sm w-full p-4"><h3 class="font-poppins font-semibold text-sm mb-2">Schedule Visit</h3><input type="hidden" id="scheduleServiceId"><input type="text" id="scheduleName" placeholder="Patient Name" class="w-full p-2 border rounded-lg mb-2 text-xs"><input type="email" id="scheduleEmail" placeholder="Email" class="w-full p-2 border rounded-lg mb-2 text-xs"><input type="tel" id="schedulePhone" placeholder="Phone" class="w-full p-2 border rounded-lg mb-2 text-xs"><input type="text" id="scheduleAddress" placeholder="Address" class="w-full p-2 border rounded-lg mb-2 text-xs"><input type="date" id="scheduleDate" class="w-full p-2 border rounded-lg mb-2 text-xs"><select id="scheduleTime" class="w-full p-2 border rounded-lg mb-3 text-xs"><option>10:00 AM</option><option>11:00 AM</option><option>12:00 PM</option><option>2:00 PM</option><option>3:00 PM</option><option>4:00 PM</option><option>5:00 PM</option></select><div class="flex gap-2"><button id="confirmScheduleBtn" class="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-semibold">Confirm</button><button id="closeScheduleModalBtn" class="flex-1 bg-gray-200 py-2 rounded-lg text-xs">Cancel</button></div></div></div>
+  <div id="detailModal" class="fixed inset-0 z-[60] modal-overlay opacity-0 invisible transition flex items-center justify-center p-3"><div class="bg-white rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto"><div class="sticky top-0 bg-white p-2 border-b flex justify-between"><h3 class="font-poppins font-bold text-sm">Details</h3><button id="closeDetailModal"><i class="fas fa-times text-gray-500"></i></button></div><div class="p-3" id="detailContent"></div></div></div>
+</div>
+
+<script>
+  // ======================= DATA =======================
+  let services = JSON.parse(localStorage.getItem('hommacare_services') || '[]');
+  if(services.length===0) services = [
+    { id: 1, name: "Nurse at Home", price: "150", duration: "1 hour", image: "https://images.pexels.com/photos/5215024/medical-professionals-working-together-in-hospital-corridor/5215024.jpg?auto=compress&cs=tinysrgb&w=400", description: "Professional registered nurse for post-surgical care, elderly care, and medical assistance at home." },
+    { id: 2, name: "ICU at Home", price: "500", duration: "12 hours", image: "https://images.pexels.com/photos/4031822/medical-team-attending-to-patient-in-hospital-room/4031822.jpg?auto=compress&cs=tinysrgb&w=400", description: "Critical care at home with ventilator support and ICU-trained nurses." },
+    { id: 3, name: "Physiotherapy", price: "200", duration: "1 hour", image: "https://images.pexels.com/photos/4101553/physiotherapist-treating-patient-in-clinic/4101553.jpg?auto=compress&cs=tinysrgb&w=400", description: "Expert physiotherapists for rehabilitation and pain management." },
+    { id: 4, name: "Doctor Visit", price: "300", duration: "30 mins", image: "https://images.pexels.com/photos/4021775/doctor-visiting-elderly-patient-at-home/4021775.jpg?auto=compress&cs=tinysrgb&w=400", description: "General physician and specialist consultation at home." },
+    { id: 5, name: "Caregiver Services", price: "100", duration: "1 hour", image: "https://images.pexels.com/photos/4101143/caregiver-assisting-elderly-woman-with-walking/4101143.jpg?auto=compress&cs=tinysrgb&w=400", description: "Trained caregivers for daily living assistance and companionship." },
+    { id: 6, name: "Elder Care at Home", price: "200", duration: "1 hour", image: "https://images.pexels.com/photos/4101143/caregiver-assisting-elderly-woman-with-walking/4101143.jpg?auto=compress&cs=tinysrgb&w=400", description: "Compassionate elderly care and daily living assistance." }
+  ];
+  let leads = JSON.parse(localStorage.getItem('hommacare_leads') || '[]');
+  let bookings = JSON.parse(localStorage.getItem('hommacare_bookings') || '[]');
+  let chartInstance = null;
+  
+  function saveAll() { localStorage.setItem('hommacare_services', JSON.stringify(services)); localStorage.setItem('hommacare_leads', JSON.stringify(leads)); localStorage.setItem('hommacare_bookings', JSON.stringify(bookings)); }
+  function showToast(msg) { let t=document.createElement('div'); t.className='fixed bottom-24 left-3 right-3 bg-dark text-white text-center py-2 rounded-lg z-[200] text-xs'; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+  
+  function renderServicesFrontend() { 
+    let container = document.getElementById('servicesGrid'); 
+    if(!container) return; 
+    container.innerHTML = services.map(s => `
+      <div class="service-card">
+        <img src="${s.image}" class="h-28 w-full object-cover">
+        <div class="p-2">
+          <div class="flex justify-between items-start"><h3 class="font-bold text-xs">${s.name}</h3><p class="text-primary font-bold text-[10px]">AED ${s.price}</p></div>
+          <p class="text-gray-500 text-[9px]">${s.duration}</p>
+          <div class="flex gap-1 mt-2"><button class="view-detail bg-primary/10 text-primary py-1 rounded-lg text-[9px] flex-1" data-id="${s.id}">Details</button><button class="book-now bg-gray-100 py-1 rounded-lg text-[9px] flex-1" data-id="${s.id}">Book</button></div>
+        </div>
+      </div>
+    `).join('');
+    document.querySelectorAll('.view-detail').forEach(btn => btn.addEventListener('click', () => { let s = services.find(x => x.id == parseInt(btn.dataset.id)); if(s) showDetail(s); }));
+    document.querySelectorAll('.book-now').forEach(btn => btn.addEventListener('click', () => { document.getElementById('scheduleServiceId').value = btn.dataset.id; document.getElementById('scheduleModal').classList.remove('opacity-0','invisible'); }));
+  }
+  
+  function showDetail(s) { 
+    document.getElementById('detailContent').innerHTML = `
+      <img src="${s.image}" class="w-full h-32 object-cover rounded-lg mb-2">
+      <h2 class="text-sm font-bold">${s.name}</h2>
+      <p class="text-primary font-bold text-sm">AED ${s.price}</p>
+      <p class="text-gray-500 text-[10px]">Duration: ${s.duration}</p>
+      <p class="text-gray-600 text-[10px] mt-1">${s.description}</p>
+      <button class="book-from-detail w-full bg-primary text-white py-1.5 rounded-lg mt-2 text-xs" data-id="${s.id}">Book Now</button>
+    `; 
+    document.getElementById('detailModal').classList.remove('opacity-0','invisible'); 
+    document.querySelector('.book-from-detail')?.addEventListener('click', () => { 
+      document.getElementById('detailModal').classList.add('opacity-0','invisible'); 
+      document.getElementById('scheduleServiceId').value = s.id; 
+      document.getElementById('scheduleModal').classList.remove('opacity-0','invisible'); 
+    });
+  }
+  
+  function updateCRMStats() { 
+    document.getElementById('crmTotalLeads').innerText = leads.length; 
+    document.getElementById('crmTotalVisits').innerText = bookings.length; 
+    document.getElementById('crmTotalBookings').innerText = bookings.filter(b => b.status === 'confirmed' || b.status === 'pending').length; 
+    let bookedLeads = leads.filter(l => l.status === 'booked').length; 
+    document.getElementById('crmConversion').innerText = leads.length ? ((bookedLeads / leads.length) * 100).toFixed(1) : '0'; 
+  }
+  
+  function renderLeads() { 
+    let status = document.getElementById('leadStatusFilter')?.value || 'all'; 
+    let source = document.getElementById('leadSourceFilter')?.value || 'all'; 
+    let filtered = leads.filter(l => (status === 'all' || l.status === status) && (source === 'all' || l.source === source)); 
+    document.getElementById('leadsList').innerHTML = filtered.map(l => `
+      <div class="crm-card p-3">
+        <div class="flex justify-between items-start flex-wrap"><div><h3 class="font-semibold text-xs">${l.name}</h3><p class="text-[9px] text-gray-500">${l.phone || 'No phone'} | ${l.source}</p></div><span class="status-badge status-${l.status} text-[9px]">${l.status}</span></div>
+        <p class="text-[9px] text-gray-500 mt-1">${l.notes || 'No notes'}</p>
+        <button class="delete-lead text-red-500 text-[9px] mt-1" data-id="${l.id}">Delete</button>
+      </div>
+    `).join(''); 
+    document.querySelectorAll('.delete-lead').forEach(btn => btn.addEventListener('click', () => { leads = leads.filter(l => l.id != parseInt(btn.dataset.id)); saveAll(); renderLeads(); updateCRMStats(); updateStats(); showToast('Patient deleted'); }));
+  }
+  
+  function renderAdminServices() { 
+    let container = document.getElementById('adminServicesList'); 
+    if(!container) return; 
+    container.innerHTML = services.map(s => `
+      <div class="crm-card p-3 flex justify-between items-center flex-wrap gap-2">
+        <div><h3 class="font-semibold text-xs">${s.name}</h3><p class="text-[9px] text-gray-500">AED ${s.price} | ${s.duration}</p></div>
+        <div class="flex gap-1"><button class="edit-service bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-[9px]" data-id="${s.id}">Edit</button><button class="delete-service bg-red-100 text-red-700 px-2 py-1 rounded-lg text-[9px]" data-id="${s.id}">Del</button></div>
+      </div>
+    `).join('');
+    document.querySelectorAll('.edit-service').forEach(btn => btn.addEventListener('click', () => { 
+      let s = services.find(x => x.id == parseInt(btn.dataset.id)); 
+      if(s) { 
+        document.getElementById('editServiceId').value = s.id; 
+        document.getElementById('serviceName').value = s.name; 
+        document.getElementById('servicePrice').value = s.price; 
+        document.getElementById('serviceDuration').value = s.duration; 
+        document.getElementById('serviceImageUrl').value = s.image; 
+        document.getElementById('serviceDescription').value = s.description; 
+        document.getElementById('serviceModalTitle').innerText = 'Edit Service'; 
+        document.getElementById('serviceModal').classList.remove('opacity-0','invisible'); 
+      }
+    }));
+    document.querySelectorAll('.delete-service').forEach(btn => btn.addEventListener('click', () => { 
+      if(confirm('Delete this service?')) { 
+        services = services.filter(x => x.id != parseInt(btn.dataset.id)); 
+        saveAll(); 
+        renderAdminServices(); 
+        renderServicesFrontend(); 
+        updateStats(); 
+        showToast('Service deleted'); 
+      }
+    }));
+  }
+  
+  function renderPipeline() { 
+    const stages = ['New Inquiry', 'Contacted', 'Assessment Scheduled', 'Care Plan Created', 'Service Active', 'Completed']; 
+    let container = document.getElementById('pipelineContainer'); 
+    if(!container) return; 
+    container.innerHTML = stages.map(stage => `
+      <div class="pipeline-column"><div class="flex justify-between mb-2"><h3 class="font-semibold text-xs">${stage}</h3><span class="text-[9px] bg-gray-200 px-1.5 rounded-full">${leads.filter(l => l.pipelineStage === stage).length}</span></div><div class="space-y-1">${leads.filter(l => l.pipelineStage === stage).map(l => `<div class="pipeline-card p-2"><p class="font-medium text-xs">${l.name}</p><p class="text-[9px] text-gray-500">${l.phone || ''}</p></div>`).join('')}</div></div>
+    `).join(''); 
+  }
+  
+  function renderVisits() { 
+    document.getElementById('visitsList').innerHTML = bookings.map(b => `
+      <div class="crm-card p-3"><div class="flex justify-between flex-wrap"><div><h3 class="font-semibold text-xs">${b.serviceName}</h3><p class="text-[9px] text-gray-500">Patient: ${b.patientName} | ${b.date} at ${b.time}</p></div><span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-100">${b.status}</span></div></div>
+    `).join(''); 
+  }
+  
+  function updateStats() { 
+    document.getElementById('statServices').innerText = services.length; 
+    document.getElementById('statBookings').innerText = bookings.length; 
+    document.getElementById('statLeads').innerText = leads.length; 
+  }
+  
+  function initDashboardChart() { 
+    let ctx = document.getElementById('leadChart')?.getContext('2d'); 
+    if(ctx) { 
+      if(chartInstance) chartInstance.destroy(); 
+      chartInstance = new Chart(ctx, {
+        type: 'line', 
+        data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'New Patient Inquiries', data: [8, 12, 10, 15, 20, 18, 14], borderColor: '#00C16A', backgroundColor: 'rgba(0,193,106,0.1)', fill: true, tension: 0.4 }] }, 
+        options: { responsive: true, maintainAspectRatio: true }
+      }); 
+    } 
+  }
+  
+  function loadRecentActivities() { 
+    let activities = [...leads.slice(-5)].reverse(); 
+    document.getElementById('crmRecentActivities').innerHTML = activities.map(l => `
+      <div class="flex items-center gap-2 p-2 border-b"><div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center"><i class="fas fa-user-plus text-green-600 text-[10px]"></i></div><div class="flex-1"><p class="text-[10px] font-medium">New patient: ${l.name}</p><p class="text-[8px] text-gray-400">${new Date(l.createdAt).toLocaleDateString()}</p></div></div>
+    `).join(''); 
+  }
+  
+  function openSidebar() { document.getElementById('mobileSidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('active'); document.body.style.overflow = 'hidden'; }
+  function closeSidebar() { document.getElementById('mobileSidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); document.body.style.overflow = ''; }
+  
+  function switchCRMPage(page) { 
+    document.getElementById('crmDashboardPage').style.display = 'none'; 
+    document.getElementById('crmLeadsPage').style.display = 'none'; 
+    document.getElementById('crmServicesPage').style.display = 'none'; 
+    document.getElementById('crmPipelinePage').style.display = 'none'; 
+    document.getElementById('crmVisitsPage').style.display = 'none'; 
+    if(page === 'dashboard') document.getElementById('crmDashboardPage').style.display = 'block'; 
+    if(page === 'leads') { document.getElementById('crmLeadsPage').style.display = 'block'; renderLeads(); } 
+    if(page === 'services') { document.getElementById('crmServicesPage').style.display = 'block'; renderAdminServices(); } 
+    if(page === 'pipeline') { document.getElementById('crmPipelinePage').style.display = 'block'; renderPipeline(); } 
+    if(page === 'visits') { document.getElementById('crmVisitsPage').style.display = 'block'; renderVisits(); } 
+    closeSidebar(); 
+  }
+  
+  // Image upload handler
+  document.getElementById('serviceImageFile')?.addEventListener('change', function(e) { 
+    let file = e.target.files[0]; 
+    if(file && file.type.match('image.*')) { 
+      let reader = new FileReader(); 
+      reader.onload = function(ev) { 
+        document.getElementById('serviceImageUrl').value = ev.target.result; 
+        document.getElementById('imagePreview').src = ev.target.result; 
+        document.getElementById('imagePreviewContainer').classList.remove('hidden'); 
+      }; 
+      reader.readAsDataURL(file); 
+    } 
+  });
+  
+  // Save Service
+  document.getElementById('saveServiceBtn')?.addEventListener('click', () => { 
+    let id = parseInt(document.getElementById('editServiceId').value); 
+    let imageUrl = document.getElementById('serviceImageUrl').value || 'https://images.pexels.com/photos/5215024/medical-professionals-working-together-in-hospital-corridor/5215024.jpg?auto=compress&cs=tinysrgb&w=400'; 
+    let newService = { 
+      id: id ? id : Date.now(), 
+      name: document.getElementById('serviceName').value, 
+      price: document.getElementById('servicePrice').value, 
+      duration: document.getElementById('serviceDuration').value, 
+      image: imageUrl, 
+      description: document.getElementById('serviceDescription').value 
+    }; 
+    if(id) { let idx = services.findIndex(s => s.id === id); if(idx !== -1) services[idx] = newService; } 
+    else services.push(newService); 
+    saveAll(); 
+    renderAdminServices(); 
+    renderServicesFrontend(); 
+    updateStats(); 
+    showToast(id ? 'Service updated' : 'Service added'); 
+    document.getElementById('serviceModal').classList.add('opacity-0','invisible'); 
+    document.getElementById('editServiceId').value = ''; 
+    document.getElementById('serviceImageFile').value = ''; 
+    document.getElementById('imagePreviewContainer').classList.add('hidden'); 
+  });
+  
+  // Schedule Visit
+  document.getElementById('confirmScheduleBtn')?.addEventListener('click', () => { 
+    let sid = parseInt(document.getElementById('scheduleServiceId').value); 
+    let service = services.find(s => s.id === sid); 
+    if(service) { 
+      let booking = { 
+        id: Date.now(), 
+        serviceId: sid, 
+        serviceName: service.name, 
+        patientName: document.getElementById('scheduleName').value || "Guest", 
+        email: document.getElementById('scheduleEmail').value, 
+        phone: document.getElementById('schedulePhone').value, 
+        address: document.getElementById('scheduleAddress').value, 
+        date: document.getElementById('scheduleDate').value, 
+        time: document.getElementById('scheduleTime').value, 
+        status: 'pending' 
+      }; 
+      bookings.push(booking); 
+      let newLead = { 
+        id: Date.now(), 
+        name: booking.patientName, 
+        email: booking.email, 
+        phone: booking.phone, 
+        address: booking.address, 
+        source: 'booking', 
+        status: 'new', 
+        notes: `Home visit scheduled for ${service.name} on ${booking.date}`, 
+        pipelineStage: 'New Inquiry', 
+        createdAt: new Date().toISOString() 
+      }; 
+      leads.push(newLead); 
+      saveAll(); 
+      showToast('✓ Home visit scheduled! Patient added to CRM.'); 
+      document.getElementById('scheduleModal').classList.add('opacity-0','invisible'); 
+      updateCRMStats(); 
+      renderLeads(); 
+      renderPipeline(); 
+      updateStats(); 
+      loadRecentActivities(); 
+    } 
+  });
+  
+  // Admin Login
+  document.getElementById('adminLoginBtn')?.addEventListener('click', () => document.getElementById('adminLoginModal').classList.remove('opacity-0','invisible'));
+  document.getElementById('closeAdminLoginBtn')?.addEventListener('click', () => document.getElementById('adminLoginModal').classList.add('opacity-0','invisible'));
+  document.getElementById('adminLoginForm')?.addEventListener('submit', (e) => { 
+    e.preventDefault(); 
+    let email = document.getElementById('adminEmail').value; 
+    let pwd = document.getElementById('adminPassword').value; 
+    if(email === 'admin@hommacare.com' && pwd === 'admin123') { 
+      document.getElementById('adminLoginModal').classList.add('opacity-0','invisible'); 
+      document.getElementById('websiteView').style.display = 'none'; 
+      document.getElementById('crmView').style.display = 'block'; 
+      updateCRMStats(); 
+      renderLeads(); 
+      renderAdminServices(); 
+      renderPipeline(); 
+      renderVisits(); 
+      initDashboardChart(); 
+      loadRecentActivities(); 
+      showToast('Welcome to Hommacare Admin!'); 
+    } else showToast('Invalid credentials. Use admin@hommacare.com / admin123'); 
+  });
+  
+  // Logout and Navigation
+  document.getElementById('crmLogoutBtn')?.addEventListener('click', () => { 
+    document.getElementById('crmView').style.display = 'none'; 
+    document.getElementById('websiteView').style.display = 'block'; 
+    if(chartInstance) chartInstance.destroy(); 
+    closeSidebar(); 
+  });
+  document.getElementById('showCRMFromSite')?.addEventListener('click', () => document.getElementById('adminLoginModal').classList.remove('opacity-0','invisible'));
+  document.getElementById('backToSiteFromCRM')?.addEventListener('click', () => { 
+    document.getElementById('crmView').style.display = 'none'; 
+    document.getElementById('websiteView').style.display = 'block'; 
+    closeSidebar(); 
+  });
+  
+  // Sidebar event listeners
+  document.getElementById('mobileMenuToggle')?.addEventListener('click', openSidebar);
+  document.getElementById('closeSidebarBtn')?.addEventListener('click', closeSidebar);
+  document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
+  
+  document.querySelectorAll('.crm-nav-item-mobile, .crm-nav-item').forEach(item => { 
+    item.addEventListener('click', () => { 
+      let page = item.dataset.crmPage; 
+      if(page) switchCRMPage(page); 
+      document.querySelectorAll('.crm-nav-item-mobile, .crm-nav-item').forEach(n => n.classList.remove('bg-primary/10','text-primary')); 
+      item.classList.add('bg-primary/10','text-primary'); 
+    }); 
+  });
+  
+  // Lead Modal
+  document.getElementById('addLeadBtn')?.addEventListener('click', () => document.getElementById('leadModal').classList.remove('opacity-0','invisible'));
+  document.getElementById('closeLeadModal')?.addEventListener('click', () => document.getElementById('leadModal').classList.add('opacity-0','invisible'));
+  document.getElementById('saveLeadBtn')?.addEventListener('click', () => { 
+    let newLead = { 
+      id: Date.now(), 
+      name: document.getElementById('leadName').value, 
+      email: document.getElementById('leadEmail').value, 
+      phone: document.getElementById('leadPhone').value, 
+      address: document.getElementById('leadAddress').value, 
+      source: document.getElementById('leadSource').value, 
+      status: document.getElementById('leadStatus').value, 
+      notes: document.getElementById('leadNotes').value, 
+      pipelineStage: 'New Inquiry', 
+      createdAt: new Date().toISOString() 
+    }; 
+    leads.push(newLead); 
+    saveAll(); 
+    renderLeads(); 
+    updateCRMStats(); 
+    updateStats(); 
+    loadRecentActivities(); 
+    showToast('Patient added successfully'); 
+    document.getElementById('leadModal').classList.add('opacity-0','invisible'); 
+  });
+  
+  // Service Modal
+  document.getElementById('openAddServiceModal')?.addEventListener('click', () => { 
+    document.getElementById('serviceModalTitle').innerText = 'Add Service'; 
+    document.getElementById('editServiceId').value = ''; 
+    document.getElementById('serviceName').value = ''; 
+    document.getElementById('servicePrice').value = ''; 
+    document.getElementById('serviceDuration').value = ''; 
+    document.getElementById('serviceImageUrl').value = ''; 
+    document.getElementById('serviceDescription').value = ''; 
+    document.getElementById('serviceImageFile').value = ''; 
+    document.getElementById('imagePreviewContainer').classList.add('hidden'); 
+    document.getElementById('serviceModal').classList.remove('opacity-0','invisible'); 
+  });
+  document.getElementById('closeServiceModal')?.addEventListener('click', () => document.getElementById('serviceModal').classList.add('opacity-0','invisible'));
+  document.getElementById('closeScheduleModalBtn')?.addEventListener('click', () => document.getElementById('scheduleModal').classList.add('opacity-0','invisible'));
+  document.getElementById('closeDetailModal')?.addEventListener('click', () => document.getElementById('detailModal').classList.add('opacity-0','invisible'));
+  
+  // Search and Filters
+  document.getElementById('searchTrigger')?.addEventListener('click', () => { 
+    let sb = document.getElementById('searchBar'); 
+    let v = sb.style.opacity === '1'; 
+    sb.style.opacity = v ? '0' : '1'; 
+    sb.style.transform = v ? 'translateY(-20px)' : 'translateY(0)'; 
+    sb.style.pointerEvents = v ? 'none' : 'auto'; 
+  });
+  document.getElementById('searchInput')?.addEventListener('input', (e) => { 
+    let term = e.target.value.toLowerCase(); 
+    let filtered = services.filter(s => s.name.toLowerCase().includes(term) || s.description.toLowerCase().includes(term)); 
+    document.getElementById('servicesGrid').innerHTML = filtered.map(s => `
+      <div class="bg-white rounded-xl overflow-hidden shadow-sm"><img src="${s.image}" class="h-28 w-full object-cover"><div class="p-2"><h3 class="font-bold text-xs">${s.name}</h3><p class="text-primary font-bold text-[10px]">AED ${s.price}</p><button class="view-detail bg-primary/10 text-primary py-1 rounded-lg text-[9px] w-full mt-1" data-id="${s.id}">Details</button></div></div>
+    `).join(''); 
+    document.querySelectorAll('.view-detail').forEach(btn => btn.addEventListener('click', () => { let s = services.find(x => x.id == parseInt(btn.dataset.id)); if(s) showDetail(s); })); 
+  });
+  document.getElementById('whatsappBtn')?.addEventListener('click', () => window.open('https://wa.me/919910988805?text=Hello%20Hommacare%20-%20I%20need%20home%20healthcare%20services', '_blank'));
+  document.querySelectorAll('.nav-item').forEach(item => { 
+    item.addEventListener('click', () => { 
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); 
+      item.classList.add('active'); 
+      let page = item.dataset.page; 
+      if(page === 'services') document.getElementById('servicesGrid').scrollIntoView({ behavior: 'smooth' }); 
+      else if(page === 'bookings') showToast('📅 Call us at +91 99109 88805 to book a service'); 
+      else if(page === 'contact') showToast('📞 Call: +91 99109 88805 | Email: care@hommacare.com'); 
+      else if(page === 'crm') document.getElementById('adminLoginModal').classList.remove('opacity-0','invisible'); 
+      else window.scrollTo({ top: 0 }); 
+    }); 
+  });
+  document.getElementById('leadStatusFilter')?.addEventListener('change', renderLeads);
+  document.getElementById('leadSourceFilter')?.addEventListener('change', renderLeads);
+  
+  // Initial render
+  renderServicesFrontend(); 
+  updateStats(); 
+  saveAll();
+  if(leads.length === 0) { 
+    leads = [{ id: 1, name: "Sarah Johnson", email: "sarah@example.com", phone: "+919910988805", address: "Dubai Marina", source: "website", status: "new", notes: "Needs elderly care for mother", pipelineStage: "New Inquiry", createdAt: new Date().toISOString() }]; 
+    saveAll(); 
+  }
+</script>
+</body>
+</html>

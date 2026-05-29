@@ -362,6 +362,33 @@
   let supabaseClient = null;
   const serviceFallbackImage = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" fill="none"><rect width="240" height="160" rx="24" fill="#E8FFF5"/><rect x="20" y="24" width="200" height="16" rx="8" fill="#00C16A" opacity="0.24"/><rect x="20" y="52" width="160" height="10" rx="5" fill="#00C16A" opacity="0.18"/><circle cx="56" cy="96" r="20" fill="#00C16A"/><rect x="92" y="84" width="90" height="10" rx="5" fill="#00C16A" opacity="0.24"/><rect x="92" y="102" width="68" height="10" rx="5" fill="#00C16A" opacity="0.16"/></svg>')}`;
 
+  async function uploadImageToBlob(file) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 10 * 1024 * 1024;
+
+    if(!validTypes.includes(file.type)) {
+      throw new Error('Invalid image type. Please choose JPG, PNG, or WEBP.');
+    }
+    if(file.size > maxSize) {
+      throw new Error('Image too large. Max size is 10MB.');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok) {
+      throw new Error(data.error || 'Upload failed');
+    }
+
+    return data.url;
+  }
+
   function resolveServiceImageSrc(imageUrl) {
     return (imageUrl && imageUrl.trim()) ? imageUrl.trim() : serviceFallbackImage;
   }
@@ -529,27 +556,24 @@
     `).join('');
 
     document.querySelectorAll('.offer-image-file').forEach((input) => {
-      input.addEventListener('change', (e) => {
+      input.addEventListener('change', async (e) => {
         const index = Number(e.target.dataset.index);
         const file = e.target.files[0];
         if(!file) return;
 
-        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if(!validTypes.includes(file.type)) {
-          showToast('Invalid image type. Please choose JPG, PNG, or WEBP.');
-          e.target.value = '';
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          offers[index].image = ev.target.result;
+        try {
+          showToast('Uploading offer image...');
+          const uploadedUrl = await uploadImageToBlob(file);
+          offers[index].image = uploadedUrl;
           syncOfferPreview(index);
           renderOffers();
           saveAll();
-          showToast('Offer image updated');
-        };
-        reader.readAsDataURL(file);
+          showToast('Offer image uploaded to Vercel Blob');
+        } catch (error) {
+          showToast(error.message || 'Offer image upload failed');
+        } finally {
+          e.target.value = '';
+        }
       });
     });
 
@@ -831,50 +855,20 @@
   document.getElementById('serviceImageFile')?.addEventListener('change', async function(e) { 
     let file = e.target.files[0]; 
     if(!file) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
-    if(!validTypes.includes(file.type)) {
-      setUploadError('Invalid image type. Please choose JPG, PNG, or WEBP.');
-      this.value = '';
-      return;
-    }
-    if(file.size > maxSize) {
-      setUploadError('Image too large. Max size is 5MB.');
-      this.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      setServiceImagePreview(document.getElementById('imagePreview'), ev.target.result, document.getElementById('imagePreviewContainer'));
-      document.getElementById('serviceImageUrl').value = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-
-    const client = getSupabaseClient();
-    if(!client) {
-      setUploadUIState(false, 'Local preview ready. Configure Supabase to upload to storage.');
-      showToast('Image preview ready locally');
-      return;
-    }
 
     try {
-      setUploadUIState(true, 'Uploading image to Supabase...');
-      const extension = file.name.split('.').pop() || 'img';
-      const path = `service-images/${Date.now()}-${Math.random().toString(36).slice(2,9)}.${extension}`;
-      const { data, error } = await client.storage.from('service-images').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
-      if(error) throw error;
-      const { data: publicData } = client.storage.from('service-images').getPublicUrl(data.path);
-      const uploadedUrl = publicData?.publicUrl;
-      if(!uploadedUrl) throw new Error('Unable to generate image URL');
+      setUploadUIState(true, 'Uploading image to Vercel Blob...');
+      const uploadedUrl = await uploadImageToBlob(file);
       document.getElementById('serviceImageUrl').value = uploadedUrl;
-      document.getElementById('imagePreview').src = uploadedUrl;
+      setServiceImagePreview(document.getElementById('imagePreview'), uploadedUrl, document.getElementById('imagePreviewContainer'));
       document.getElementById('imagePreviewContainer').classList.remove('hidden');
       setUploadUIState(false, 'Image uploaded successfully');
       showToast('Image uploaded successfully');
     } catch (error) {
-      setUploadError('Upload failed. Using local preview instead.');
-      showToast('Upload failed. Using local preview.');
+      setUploadError(error.message || 'Upload failed.');
+      showToast(error.message || 'Upload failed.');
+    } finally {
+      this.value = '';
     }
   });
   
@@ -1063,24 +1057,22 @@
     document.getElementById('leadModal').classList.add('opacity-0','invisible'); 
   });
   
-  document.getElementById('bannerImageFile')?.addEventListener('change', function(e) {
+  document.getElementById('bannerImageFile')?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if(!file) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if(!validTypes.includes(file.type)) {
-      showToast('Invalid image type. Please choose JPG, PNG, or WEBP.');
-      this.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target.result;
-      bannerConfig.image = result;
+
+    try {
+      showToast('Uploading banner image...');
+      const uploadedUrl = await uploadImageToBlob(file);
+      bannerConfig.image = uploadedUrl;
       renderHomepageBanner();
       saveAll();
-      showToast('Banner preview updated');
-    };
-    reader.readAsDataURL(file);
+      showToast('Banner image uploaded to Vercel Blob');
+    } catch (error) {
+      showToast(error.message || 'Banner upload failed');
+    } finally {
+      this.value = '';
+    }
   });
   document.getElementById('saveBannerBtn')?.addEventListener('click', () => {
     const bannerUrl = document.getElementById('bannerImageUrl').value.trim();
@@ -1106,24 +1098,22 @@
     showToast('Banner reset to default');
   });
 
-  document.getElementById('logoImageFile')?.addEventListener('change', function(e) {
+  document.getElementById('logoImageFile')?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if(!file) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if(!validTypes.includes(file.type)) {
-      showToast('Invalid image type. Please choose JPG, PNG, or WEBP.');
-      this.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target.result;
-      brandingConfig.logo = result;
+
+    try {
+      showToast('Uploading logo image...');
+      const uploadedUrl = await uploadImageToBlob(file);
+      brandingConfig.logo = uploadedUrl;
       renderHomepageBranding();
       saveAll();
-      showToast('Logo preview updated');
-    };
-    reader.readAsDataURL(file);
+      showToast('Website logo uploaded to Vercel Blob');
+    } catch (error) {
+      showToast(error.message || 'Logo upload failed');
+    } finally {
+      this.value = '';
+    }
   });
   document.getElementById('saveLogoBtn')?.addEventListener('click', () => {
     const logoUrl = document.getElementById('logoImageUrl').value.trim();
